@@ -1,0 +1,1 @@
+embed_compat spiffs mount test

@@ -1,0 +1,17 @@
+.{
+    .name = .esp,
+    .version = "0.1.0",
+    .fingerprint = 0xe54a8bd08ffdb3ce,
+    .minimum_zig_version = "0.15.2",
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "lib",
+    },
+    .dependencies = .{
+        .embed_zig = .{
+            .url = "git+https://github.com/embed-zig/embed-zig.git?ref=v2#7693aa7bf07c220875df5016dbe22e846cc549f7",
+            .hash = "embed_zig-0.0.0-prAy_KAuJwBdWvefTfTdeJAOpFzoJSaKbxUElbXyJYEL",
+        },
+    },
+}
