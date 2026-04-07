@@ -8,7 +8,7 @@ pub const board = .{
     .target_config_flag = @as([]const u8, "CONFIG_IDF_TARGET_ESP32S3"),
 };
 
-/// 与 H106 产品常见 16MB Flash 一致；可按实板改 `esptool_py`。
+/// Matches typical H106 16 MB flash; adjust `esptool_py` for your board if needed.
 pub const partition_table = esp_idf.PartitionTable.make(.{
     .entries = &.{
         .{ .name = "nvs", .kind = .data, .subtype = .nvs, .size = 0x6000 },
@@ -17,7 +17,7 @@ pub const partition_table = esp_idf.PartitionTable.make(.{
     },
 });
 
-/// Octal PSRAM 与 TIGA V4 BSP 常用配置对齐（与 `embed_compat` esp32s3_devkit 同类）。
+/// Octal PSRAM aligned with common TIGA V4 BSP settings (same class as `embed_compat` esp32s3_devkit).
 pub const config = esp_idf.SdkConfig.make(.{
     .esptool_py = .{
         .esptoolpy_flashsize = "16MB",

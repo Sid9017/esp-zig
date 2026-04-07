@@ -31,7 +31,7 @@ static const char *TAG = "lcd_solid";
 #define BSP_GPIO_SPI_MOSI (42)
 #define BSP_GPIO_LCD_RESET (45)
 #define BSP_GPIO_LCD_BL_PWM (46)
-/** 上电即拉高（板级电源/使能等，与 ST7789 走线无关） */
+/** Assert high at boot: board power/enable (not part of ST7789 routing). */
 #define BSP_GPIO_POWER_ON_HIGH (6)
 
 /* board_display_hal.h */
