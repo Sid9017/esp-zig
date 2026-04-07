@@ -31,6 +31,8 @@ static const char *TAG = "lcd_solid";
 #define BSP_GPIO_SPI_MOSI (42)
 #define BSP_GPIO_LCD_RESET (45)
 #define BSP_GPIO_LCD_BL_PWM (46)
+/** 上电即拉高（板级电源/使能等，与 ST7789 走线无关） */
+#define BSP_GPIO_POWER_ON_HIGH (6)
 
 /* board_display_hal.h */
 #define LCD_H_RES (240)
@@ -77,6 +79,19 @@ static esp_err_t init_backlight_pwm(void) {
     return ESP_OK;
 }
 
+static esp_err_t gpio_power_on_high(void) {
+    gpio_config_t cfg = {
+        .pin_bit_mask = (1ULL << BSP_GPIO_POWER_ON_HIGH),
+        .mode = GPIO_MODE_OUTPUT,
+        .pull_up_en = false,
+        .pull_down_en = false,
+        .intr_type = GPIO_INTR_DISABLE,
+    };
+    ESP_RETURN_ON_ERROR(gpio_config(&cfg), TAG, "gpio_power_on_high config");
+    gpio_set_level(BSP_GPIO_POWER_ON_HIGH, 1);
+    return ESP_OK;
+}
+
 static void backlight_on_full(void) {
     const uint32_t duty_max = (1U << 13) - 1U;
     esp_err_t err = ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, duty_max);
@@ -91,7 +106,12 @@ static void backlight_on_full(void) {
 }
 
 int espz_lcd_solid_init(void) {
-    esp_err_t err = init_backlight_pwm();
+    esp_err_t err = gpio_power_on_high();
+    if (err != ESP_OK) {
+        return (int)err;
+    }
+
+    err = init_backlight_pwm();
     if (err != ESP_OK) {
         return (int)err;
     }
