@@ -1,0 +1,21 @@
+.{
+    .name = .cellular_test,
+    .version = "0.1.0",
+    .fingerprint = 0x888a2af454a8a9eb,
+    .minimum_zig_version = "0.15.2",
+    .dependencies = .{
+        .esp = .{
+            .path = "../..",
+        },
+        .embed_zig = .{
+            .path = "../../../embed-zig",
+        },
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+        "board",
+        "modem_init",
+    },
+}
