@@ -150,7 +150,6 @@ int espz_cellular_uart_read(uint8_t *buf, int len) {
     if (!s_logged_first_read) {
         s_logged_first_read = 1;
         ESP_LOGI(TAG, "first read len=%d", n);
-        ESP_LOG_BUFFER_HEX_LEVEL(TAG, buf, (size_t)n > 48U ? 48U : (size_t)n, ESP_LOG_INFO);
     }
     return n;
 }
@@ -175,7 +174,6 @@ int espz_cellular_uart_write(const uint8_t *buf, int len) {
         } else {
             ESP_LOGI(TAG, "first write len=%d ret=%d", len, w);
         }
-        ESP_LOG_BUFFER_HEX_LEVEL(TAG, buf, (size_t)len > 48U ? 48U : (size_t)len, ESP_LOG_INFO);
     }
     return w;
 }
@@ -189,4 +187,61 @@ int espz_cellular_uart_rx_waiting(void) {
         return 0;
     }
     return n > (size_t)0x7fffffff ? 0x7fffffff : (int)n;
+}
+
+int espz_cellular_uart_set_baud(unsigned baud) {
+    if (!s_inited) {
+        return -1;
+    }
+    /*
+     * Match H106 `quectel_cmux.c`: flush before switching so stray bytes at the old
+     * rate are dropped; modem switches line rate after AT+IPR OK — host must not mix rates.
+     */
+    uart_flush(s_port);
+    uart_flush_input(s_port);
+
+    if (uart_set_baudrate(s_port, (uint32_t)baud) != ESP_OK) {
+        ESP_LOGE(TAG, "uart_set_baudrate %u failed", (unsigned)baud);
+        return -1;
+    }
+    uint32_t baud_hw = 0;
+    if (uart_get_baudrate(s_port, &baud_hw) == ESP_OK) {
+        ESP_LOGI(TAG, "baud set req=%u hw=%lu", (unsigned)baud, (unsigned long)baud_hw);
+    } else {
+        ESP_LOGI(TAG, "baud set req=%u", (unsigned)baud);
+    }
+
+    vTaskDelay(pdMS_TO_TICKS(200));
+    uart_flush(s_port);
+    uart_flush_input(s_port);
+    vTaskDelay(pdMS_TO_TICKS(50));
+    return 0;
+}
+
+/// Read RX until no bytes for `quiet_ms` (poll every 5 ms) or `cap_ms` total elapsed.
+/// Use after baud change so boot/URC lines do not eat the `OK` for the next `AT`.
+void espz_cellular_uart_drain_until_idle(unsigned quiet_ms, unsigned cap_ms) {
+    if (!s_inited) {
+        return;
+    }
+    uint8_t b[256];
+    unsigned total = 0;
+    unsigned quiet_accum = 0;
+    while (total < cap_ms) {
+        int drained_any = 0;
+        int n;
+        while ((n = uart_read_bytes(s_port, b, sizeof(b), 0)) > 0) {
+            drained_any = 1;
+        }
+        if (drained_any) {
+            quiet_accum = 0;
+        } else {
+            quiet_accum += 5;
+            if (quiet_accum >= quiet_ms) {
+                break;
+            }
+        }
+        vTaskDelay(pdMS_TO_TICKS(5));
+        total += 5;
+    }
 }

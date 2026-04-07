@@ -1,4 +1,4 @@
-//! H106 TIGA V4 cellular smoke: embed-zig `test_runner.modem.runSurface` over ESP-IDF UART.
+//! H106 TIGA V4 cellular smoke over ESP-IDF UART — `cellular.test_runner.modem.runSmoke` (single linear flow).
 //! GPIO6 = codec enable (modem DTR path); GPIO12 = MODEM_ENABLE; UART1 TX17/RX18 @ 115200.
 
 const esp_embed = @import("esp_embed");
@@ -26,6 +26,8 @@ extern fn espz_cellular_uart_deinit() callconv(.c) void;
 extern fn espz_cellular_uart_read(buf: [*]u8, len: i32) callconv(.c) i32;
 extern fn espz_cellular_uart_write(buf: [*]const u8, len: i32) callconv(.c) i32;
 extern fn espz_cellular_uart_rx_waiting() callconv(.c) i32;
+extern fn espz_cellular_uart_set_baud(baud: u32) callconv(.c) i32;
+extern fn espz_cellular_uart_drain_until_idle(quiet_ms: u32, cap_ms: u32) callconv(.c) void;
 
 const ModemTime = struct {
     pub fn nowMs(_: ModemTime) u64 {
@@ -71,6 +73,14 @@ var g_driver: Driver = undefined;
 const EspCellularDevice = struct {
     pub fn modem(_: *EspCellularDevice) cellular.Modem {
         return cellular.Modem.make(&g_driver);
+    }
+
+    /// Called by `runSmoke` after `AT+IPR=<921600>`; must match modem line rate.
+    /// Drains post-switch URCs so the following `AT` is not buried in unsolicited lines.
+    pub fn setUartBaud(_: *EspCellularDevice, baud: u32) bool {
+        if (espz_cellular_uart_set_baud(baud) != 0) return false;
+        espz_cellular_uart_drain_until_idle(40, 500);
+        return true;
     }
 };
 
@@ -122,13 +132,8 @@ fn run() !void {
 
     app_log.info("cellular Driver.init ok (profile=quectel, noop hardware)", .{});
 
-    // Main task stack is large in build_config — runSurface on worker default stack can overflow.
-    try cellular.test_runner.modem.runSurface(esp_embed.std, &g_device, .{
-        .probe_at_echo = true,
-        .require_at_ok = true,
-        .probe_sim_status = true,
-        .require_sim_status_ok = false,
-    });
+    // Main task stack is large in build_config — keep smoke on main task if stack overflows.
+    try cellular.test_runner.modem.runSmoke(esp_embed.std, &g_device);
 
     app_log.info("cellular smoke passed", .{});
     while (true) {
