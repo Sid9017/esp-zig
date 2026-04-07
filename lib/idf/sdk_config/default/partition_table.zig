@@ -10,12 +10,12 @@ pub const Config = struct {
     partition_table_custom: bool = true,
     /// Kconfig key: `CONFIG_PARTITION_TABLE_CUSTOM_FILENAME`.
     /// Sets the literal value for partition table custom filename in the `partition_table` module; the value is forwarded into ESP-IDF Kconfig output as configured.
-    /// Default: `"build/partitions.generated.e92b2059b49b71e3.csv"`.
-    partition_table_custom_filename: []const u8 = "build/partitions.generated.e92b2059b49b71e3.csv",
+    /// Default: `".build/partitions.generated.e92b2059b49b71e3.csv"`.
+    partition_table_custom_filename: []const u8 = ".build/partitions.generated.e92b2059b49b71e3.csv",
     /// Kconfig key: `CONFIG_PARTITION_TABLE_FILENAME`.
     /// Sets the literal value for partition table filename in the `partition_table` module; the value is forwarded into ESP-IDF Kconfig output as configured.
-    /// Default: `"build/partitions.generated.e92b2059b49b71e3.csv"`.
-    partition_table_filename: []const u8 = "build/partitions.generated.e92b2059b49b71e3.csv",
+    /// Default: `".build/partitions.generated.e92b2059b49b71e3.csv"`.
+    partition_table_filename: []const u8 = ".build/partitions.generated.e92b2059b49b71e3.csv",
     /// Kconfig key: `CONFIG_PARTITION_TABLE_MD5`.
     /// Controls whether partition table MD5 is enabled for the `partition_table` module; this affects conditional compilation and runtime behavior in ESP-IDF.
     /// Default: `true`.
