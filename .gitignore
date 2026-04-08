@@ -1,5 +1,5 @@
 openteam/
 .*zig-*/
 zig-out/
-test/**/build/
+.build/
 __pycache__/

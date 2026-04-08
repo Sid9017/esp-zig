@@ -118,7 +118,7 @@ pub const Extracted = struct {
 pub const ResolveOptions = struct {
     build_config: *std.Build.Module,
     app_root: []const u8 = ".",
-    build_dir: []const u8 = "build",
+    build_dir: []const u8 = ".build",
 };
 pub const ResolveBuildContextOptions = ResolveOptions;
 pub const resolveBuildContext = resolve;

@@ -64,10 +64,10 @@ gen_sdkconfig_and_partition_table: *std.Build.Step,
 /// Runs `idf.py reconfigure` inside the staged project.
 sdkconfig_configure: *std.Build.Step,
 
-/// Captures the built ELF layout into `build_dir/elf_layout.txt`.
+/// Captures the built ELF layout into `.build/elf_layout.txt` by default.
 elf_layout: *std.Build.Step,
 
-/// Merges all flashable images into `build_dir/combined.bin`.
+/// Merges all flashable images into `.build/combined.bin` by default.
 combine_binaries: *std.Build.Step,
 
 /// Flashes firmware, then flashes any extra data partitions.
@@ -104,7 +104,8 @@ pub fn addApp(b: *std.Build, app_name: []const u8, opts: AddOptions) Self {
         };
     }
 
-    // Generate idf_project/ directory and sdkconfig.generated, partitions.generated.csv and app_main.generated.c
+    // Generate `.build/idf_project/` plus sdkconfig.generated, partitions.generated.csv,
+    // and app_main.generated.c
 
     const gen_idf_project_dir = tools.addGenerateAddappProjectTool(b, app_name, opts.context, extracted_project);
     const gen_sdkconfig_and_partition_table = tools.addSdkconfigGeneratorTool(b, opts.context);
