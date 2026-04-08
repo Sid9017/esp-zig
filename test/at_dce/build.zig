@@ -2,6 +2,7 @@ const std = @import("std");
 const esp = @import("esp");
 
 const Module = std.Build.Module;
+const Component = esp.idf.Component;
 const BuildContext = esp.idf.BuildContext.BuildContext;
 
 const default_build_config_path = "board/esp32s3_devkit/build_config.zig";
@@ -17,6 +18,10 @@ fn buildEsp(b: *std.Build, optimize: std.builtin.OptimizeMode) void {
     const embed_esp = importEmbedZig(b, esp_app_context.context.target, optimize);
     wireEspRuntimeImports(esp_app_context.esp_imports, embed_esp, esp_app_context.build_config_module);
 
+    const use_uart1 = resolveUseUart1(b);
+    const at_opts = b.addOptions();
+    at_opts.addOption(bool, "use_uart1", use_uart1);
+
     const app_root_module = b.createModule(.{
         .root_source_file = b.path("src/esp_main.zig"),
         .target = esp_app_context.context.target,
@@ -26,6 +31,10 @@ fn buildEsp(b: *std.Build, optimize: std.builtin.OptimizeMode) void {
             .{ .name = "at", .module = embed_esp.at },
         },
     });
+    app_root_module.addOptions("at_dce_options", at_opts);
+
+    const uart1_component = createAtUart1HelperComponent(b);
+    const extra_components: []const *Component = if (use_uart1) &.{uart1_component} else &.{};
 
     const app = esp.idf.addApp(b, "at_dce", .{
         .context = esp_app_context.context,
@@ -33,7 +42,7 @@ fn buildEsp(b: *std.Build, optimize: std.builtin.OptimizeMode) void {
             .symbol = "zig_esp_main",
             .module = app_root_module,
         },
-        .components = &.{},
+        .components = extra_components,
     });
 
     registerAppSteps(b, app);
@@ -133,6 +142,27 @@ fn wireEspRuntimeImports(
     esp_imports.esp_embed.addImport("net", embed_imports.net);
     esp_imports.esp_embed.addImport("sync", embed_imports.sync);
     esp_imports.esp_embed.addImport("esp_binding", esp_imports.esp_binding);
+}
+
+fn resolveUseUart1(b: *std.Build) bool {
+    const at_transport = b.option(
+        []const u8,
+        "at_transport",
+        "AT I/O: usb (stdin/stdout, default) or uart1 (115200, TX GPIO17 / RX GPIO18)",
+    ) orelse "usb";
+    if (std.mem.eql(u8, at_transport, "usb")) return false;
+    if (std.mem.eql(u8, at_transport, "uart1")) return true;
+    std.debug.panic("invalid -Dat_transport={s}: expected usb or uart1", .{at_transport});
+}
+
+fn createAtUart1HelperComponent(b: *std.Build) *Component {
+    const component = Component.create(b, .{ .name = "at_dce_uart1" });
+    component.addCSourceFiles(.{
+        .root = b.path("uart1_helper"),
+        .files = &.{"at_dce_uart1.c"},
+    });
+    component.addRequire("esp_driver_uart");
+    return component;
 }
 
 fn registerAppSteps(b: *std.Build, app: esp.idf.App) void {
