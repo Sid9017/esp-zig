@@ -1,0 +1,16 @@
+.{
+    .name = .at_dce,
+    .version = "0.1.0",
+    .fingerprint = 0xd180eae8ba795d31,
+    .minimum_zig_version = "0.15.2",
+    .dependencies = .{
+        .esp = .{ .path = "../.." },
+        .embed_zig = .{ .path = "../../../embed-zig" },
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+        "board",
+    },
+}
