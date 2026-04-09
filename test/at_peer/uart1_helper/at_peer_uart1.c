@@ -1,8 +1,8 @@
-/* UART1 for AT DCE: ESP32-S3-DevKitC-1 style wiring (TX=GPIO17, RX=GPIO18). */
+/* UART1 for AT responder: ESP32-S3-DevKitC-1 style wiring (TX=GPIO17, RX=GPIO18). */
 #include "driver/uart.h"
 #include "esp_err.h"
 
-esp_err_t at_dce_uart1_init(void) {
+esp_err_t at_peer_uart1_init(void) {
     uart_config_t cfg = {0};
     cfg.baud_rate = 115200;
     cfg.data_bits = UART_DATA_8_BITS;

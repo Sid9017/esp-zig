@@ -1,6 +1,8 @@
-# at_dce — ESP32-S3 minimal AT modem mock (DCE)
+# at_peer — ESP32-S3 minimal AT modem mock (DCE)
 
 Firmware for **ESP32-S3-DevKit** (and similar). By default the **AT** stream uses **USB Serial/JTAG** (stdin/stdout). You can switch to **UART1** for AT only (logs stay on USB if `build_config` keeps the primary console on USB).
+
+Firmware uses **`at.Peer.Config.with`** + **`at.Peer.init`** over **`at.Transport`**, then **`canned_dce.runForever`** (see **`embed-zig/lib/at/README.md`**).
 
 ### AT transport (`-Dat_transport`)
 
@@ -14,7 +16,7 @@ Firmware for **ESP32-S3-DevKit** (and similar). By default the **AT** stream use
 `build_config` defaults to `board/esp32s3_devkit/build_config.zig` if you omit `-Dbuild_config`.
 
 ```sh
-cd ~/haivivi/esp/test/at_dce
+cd ~/haivivi/esp/test/at_peer
 
 # Equivalent: AT over USB console
 zig build
@@ -32,7 +34,7 @@ zig build flash -- -p /dev/cu.usbmodem4101
 ### Build: UART1 mode
 
 ```sh
-cd ~/haivivi/esp/test/at_dce
+cd ~/haivivi/esp/test/at_peer
 zig build -Dat_transport=uart1 -Dbuild_config=board/esp32s3_devkit/build_config.zig
 ```
 
@@ -52,7 +54,7 @@ Connect **crossed** TX/RX and common ground:
 
 Do **not** connect the adapter’s VCC to the board unless you know you need to power one side that way; often the DevKit is already USB-powered.
 
-Your **Mac** runs the **DTE** using **embed-zig** `integration_tests/at/dte_serial_host` on the adapter’s serial port (e.g. `/dev/cu.usbserial-*`), **115200** 8N1. Logs from `esp_log` stay on the DevKit’s **USB** console when `build_config` uses USB Serial/JTAG as primary console.
+Your **Mac** runs the **DTE** using embed-zig **`lib/at/test_runner/integration/dte_serial_host.zig`** on the adapter’s serial port (e.g. `/dev/cu.usbserial-*`), **115200** 8N1. Logs from `esp_log` stay on the DevKit’s **USB** console when `build_config` uses USB Serial/JTAG as primary console.
 
 ## Prerequisites
 
@@ -67,7 +69,7 @@ After `zig build` (either transport), flashing and **USB serial monitor** use th
 Use **`cu`** on macOS if `tty` is busy (another monitor is open):
 
 ```sh
-cd ~/haivivi/esp/test/at_dce
+cd ~/haivivi/esp/test/at_peer
 zig build flash -- -p /dev/cu.usbmodem4101
 zig build monitor -- -p /dev/cu.usbmodem4101
 zig build flash_monitor -- -p /dev/cu.usbmodem4101
@@ -80,14 +82,16 @@ zig build flash_monitor -- -p /dev/cu.usbmodem4101
 - **`usb` firmware:** set `EMBED_AT_SERIAL` to the DevKit’s **USB** serial device (e.g. `/dev/cu.usbmodem…`).
 - **`uart1` firmware:** set `EMBED_AT_SERIAL` to the **USB–TTL adapter** (e.g. `/dev/cu.usbserial…`), with wiring as in the **UART1 wiring** section above.
 
+Per **`embed-zig/lib/at/README.md`**, integration smoke includes **`dte_serial_host`** (skips if `EMBED_AT_SERIAL` is unset):
+
 ```sh
 cd ~/haivivi/embed-zig
 export EMBED_AT_SERIAL=/dev/cu.usbmodem4101   # usb mode; use /dev/cu.usbserial-* for uart1 + adapter
 export EMBED_AT_BAUD=115200   # optional
-zig build test-at
+zig build test-integration-at
 ```
 
-The **`integration_tests/at/dte_serial_host`** case runs inside `test-at` and will probe `AT` then `AT+CSQ`.
+That run probes **`AT`** then **`AT+CSQ`** via **`at.Peer.exchange`**.
 
 ## Implemented commands (must match host expectations)
 
@@ -95,6 +99,7 @@ The **`integration_tests/at/dte_serial_host`** case runs inside `test-at` and wi
 |------------------|-----------------------------|
 | `AT`             | `OK\r\n`                    |
 | `AT+CSQ` prefix  | `+CSQ: 99,99\r\nOK\r\n`     |
+| `AT+CGMR` prefix | `+CGMR: HVVDCE\r\nOK\r\n`   |
 | other `AT…`      | `ERROR\r\n`                 |
 
-Lines are **LF-terminated** on the wire (`\r` before `\n` is ignored). Host sends `AT\r\n` by default (`Dte` `append_crlf`).
+Lines follow **`LineReader`** framing (CR / CRLF / LF). Host **`exchange`** appends **`\\r\\n`** by default (`Config.append_crlf`).

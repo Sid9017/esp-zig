@@ -31,14 +31,14 @@ fn buildEsp(b: *std.Build, optimize: std.builtin.OptimizeMode) void {
             .{ .name = "at", .module = embed_esp.at },
         },
     });
-    app_root_module.addOptions("at_dce_options", at_opts);
+    app_root_module.addOptions("at_peer_options", at_opts);
 
     const extra_components: []const *Component = if (use_uart1)
         &.{createAtUart1HelperComponent(b)}
     else
         &.{};
 
-    const app = esp.idf.addApp(b, "at_dce", .{
+    const app = esp.idf.addApp(b, "at_peer", .{
         .context = esp_app_context.context,
         .entry = .{
             .symbol = "zig_esp_main",
@@ -158,22 +158,22 @@ fn resolveUseUart1(b: *std.Build) bool {
 }
 
 fn createAtUart1HelperComponent(b: *std.Build) *Component {
-    const component = Component.create(b, .{ .name = "at_dce_uart1" });
+    const component = Component.create(b, .{ .name = "at_peer_uart1" });
     component.addCSourceFiles(.{
         .root = b.path("uart1_helper"),
-        .files = &.{"at_dce_uart1.c"},
+        .files = &.{"at_peer_uart1.c"},
     });
     component.addRequire("esp_driver_uart");
     return component;
 }
 
 fn registerAppSteps(b: *std.Build, app: esp.idf.App) void {
-    const build_step = b.step("build", "Build at_dce firmware");
+    const build_step = b.step("build", "Build at_peer firmware");
     build_step.dependOn(app.combine_binaries);
     build_step.dependOn(app.elf_layout);
     b.default_step = build_step;
 
-    const flash_step = b.step("flash", "Flash at_dce to ESP32-S3");
+    const flash_step = b.step("flash", "Flash at_peer to ESP32-S3");
     flash_step.dependOn(app.flash);
 
     const monitor_step = b.step("monitor", "Serial monitor");

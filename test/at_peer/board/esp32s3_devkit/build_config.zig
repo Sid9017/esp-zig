@@ -17,7 +17,7 @@ pub const partition_table = esp_idf.PartitionTable.make(.{
 });
 
 pub const config = esp_idf.SdkConfig.make(.{
-    // Primary console = USB Serial/JTAG so `getStdIn()` / `getStdOut()` (and AT DCE loop) use the same
+    // Primary console = USB Serial/JTAG so `getStdIn()` / `getStdOut()` (and AT responder over USB) use the same
     // native USB ACM as `esp_log`. Default IDF is UART0 primary + USJ secondary → logs on USB, stdin on UART.
     .console = .{
         .console_sorted_help = false,
