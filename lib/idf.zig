@@ -36,4 +36,5 @@ test "idf/unit_tests" {
     _ = @import("idf/utils/fs.zig");
     _ = @import("idf/App.zig");
     _ = @import("idf/tools/generate_app_main.zig");
+    _ = @import("idf/tools/elf_layout.zig");
 }

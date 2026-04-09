@@ -446,7 +446,10 @@ fn parseCodeSymbols(
 
     // `out` was allocated with length `count`; callers free with the slice length. Shrink so
     // `allocator.free` matches the allocation size (avoids GPA "size does not match" on exit).
-    return try allocator.realloc(out, used);
+    return allocator.realloc(out, used) catch |err| {
+        allocator.free(out);
+        return err;
+    };
 }
 
 fn resolveModuleName(

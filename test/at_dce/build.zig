@@ -33,8 +33,10 @@ fn buildEsp(b: *std.Build, optimize: std.builtin.OptimizeMode) void {
     });
     app_root_module.addOptions("at_dce_options", at_opts);
 
-    const uart1_component = createAtUart1HelperComponent(b);
-    const extra_components: []const *Component = if (use_uart1) &.{uart1_component} else &.{};
+    const extra_components: []const *Component = if (use_uart1)
+        &.{createAtUart1HelperComponent(b)}
+    else
+        &.{};
 
     const app = esp.idf.addApp(b, "at_dce", .{
         .context = esp_app_context.context,
